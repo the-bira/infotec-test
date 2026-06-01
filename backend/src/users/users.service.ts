@@ -9,7 +9,7 @@ export class UsersService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     // Run seed automatically when the module initializes
