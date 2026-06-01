@@ -1,0 +1,14 @@
+# Agent & System Metadata
+.agents/
+.claude/
+.cursor/
+.windsurf/
+
+# Specifications & Documentation (Non-code)
+.specs/
+
+# Backend Ignored Files
+backend/dist/
+backend/node_modules/
+backend/.env
+backend/coverage/
