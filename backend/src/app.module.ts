@@ -6,6 +6,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envValidationSchema } from './config/env.config';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { envValidationSchema } from './config/env.config';
       isGlobal: true,
       validationSchema: envValidationSchema,
     }),
+    UsersModule,
 
     // 2. Establish Database Connection (SQL Server) via TypeORM
     TypeOrmModule.forRootAsync({
