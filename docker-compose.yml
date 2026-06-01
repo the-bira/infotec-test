@@ -20,6 +20,28 @@ services:
     volumes:
       - redis_data:/data
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aivacol_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=sqlserver
+      - DB_PORT=1433
+      - DB_USERNAME=sa
+      - DB_PASSWORD=S3nh4_Str0ng_2026!
+      - DB_DATABASE=aivacol_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=AivacolSecretToken2026
+      - JWT_EXPIRES_IN=1d
+    depends_on:
+      - sqlserver
+      - redis
+
 volumes:
   mssql_data:
   redis_data:
