@@ -6,7 +6,7 @@ import { FleetService } from '../../core/services/fleet';
 import { IBrand, IModel } from '@aivacol/shared';
 import { z } from 'zod';
 import { forkJoin } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { finalize, timeout } from 'rxjs/operators';
 
 // Taiga UI
 import { TuiButton, TuiTextfield, TuiInput, TuiLabel } from '@taiga-ui/core';
@@ -77,16 +77,14 @@ export class VehicleForm implements OnInit {
       models: this.fleetService.getModels()
     })
       .pipe(
-        // finalize = "finally": sempre executa ao completar ou ao dar erro
+        timeout(8000),
         finalize(() => {
           const idParam = this.route.snapshot.paramMap.get('id');
           if (idParam) {
-            // Modo edição: isLoading fica true até loadVehicleForEdit terminar
             this.isEditMode = true;
             this.vehicleId = Number(idParam);
             this.loadVehicleForEdit(this.vehicleId);
           } else {
-            // Modo criação: libera o loading aqui
             this.isLoading = false;
           }
         })
@@ -98,7 +96,9 @@ export class VehicleForm implements OnInit {
         },
         error: (err) => {
           console.error('Erro ao carregar dados iniciais:', err);
-          this.errorMessage = `Erro ao carregar dados (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
+          this.errorMessage = err?.name === 'TimeoutError'
+            ? 'Timeout: o backend não respondeu em 8 segundos. Verifique se o Docker está rodando.'
+            : `Erro ${err?.status ?? '0'}: não foi possível carregar marcas/modelos.`;
         }
       });
   }

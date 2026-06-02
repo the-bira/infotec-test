@@ -5,7 +5,7 @@ import { FleetService } from '../../core/services/fleet';
 import { Auth } from '../../core/services/auth';
 import { IVehicle } from '@aivacol/shared';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs/operators';
+import { finalize, timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'app-vehicles-list',
@@ -39,15 +39,22 @@ export class VehiclesList implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     this.fleetService.getVehicles()
-      .pipe(finalize(() => { this.isLoading = false; }))
+      .pipe(
+        timeout(8000),  // se não responder em 8s, dispara erro
+        finalize(() => { this.isLoading = false; })
+      )
       .subscribe({
         next: (data) => {
           this.vehicles = data;
           this.applyFilter();
         },
         error: (err) => {
+          if (err?.name === 'TimeoutError') {
+            this.errorMessage = 'Timeout: o backend não respondeu em 8 segundos. Verifique se o Docker está rodando corretamente.';
+          } else {
+            this.errorMessage = `Erro ${err?.status ?? '0'}: ${err?.message ?? 'sem conexão'}. Verifique se o backend está acessível em localhost:3000.`;
+          }
           console.error('Erro ao buscar veículos:', err);
-          this.errorMessage = `Erro ao carregar veículos (${err?.status ?? 'sem conexão'}). Verifique se o backend está acessível em localhost:3000.`;
         }
       });
   }
