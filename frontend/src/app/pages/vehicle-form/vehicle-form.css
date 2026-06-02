@@ -39,6 +39,18 @@
   color: #fff;
 }
 
+.settings-nav-link {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-right: 1.5rem;
+  transition: color 0.2s;
+}
+
+.settings-nav-link:hover {
+  color: #fff;
+}
+
 .main-content {
   max-width: 600px;
   margin: 3rem auto;
