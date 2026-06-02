@@ -9,6 +9,7 @@ import { envValidationSchema } from './config/env.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
+import { ModelsModule } from './models/models.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BrandsModule } from './brands/brands.module';
     UsersModule,
     AuthModule,
     BrandsModule,
+    ModelsModule,
 
     // 2. Establish Database Connection (SQL Server) via TypeORM
     TypeOrmModule.forRootAsync({
