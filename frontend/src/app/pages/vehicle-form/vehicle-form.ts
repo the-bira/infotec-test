@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -51,7 +51,8 @@ export class VehicleForm implements OnInit {
     private fb: FormBuilder,
     private fleetService: FleetService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.vehicleForm = this.fb.group({
       license_plate: ['', [Validators.required]],
@@ -86,6 +87,7 @@ export class VehicleForm implements OnInit {
             this.loadVehicleForEdit(this.vehicleId);
           } else {
             this.isLoading = false;
+            this.cdr.detectChanges();
           }
         })
       )
@@ -105,7 +107,10 @@ export class VehicleForm implements OnInit {
 
   loadVehicleForEdit(id: number): void {
     this.fleetService.getVehicle(id)
-      .pipe(finalize(() => { this.isLoading = false; }))
+      .pipe(finalize(() => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe({
         next: (vehicle) => {
           this.selectedBrandId = vehicle.model?.brand_id;

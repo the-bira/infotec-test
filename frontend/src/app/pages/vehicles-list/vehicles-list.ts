@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FleetService } from '../../core/services/fleet';
@@ -26,7 +26,8 @@ export class VehiclesList implements OnInit {
   constructor(
     private fleetService: FleetService,
     private auth: Auth,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -40,8 +41,11 @@ export class VehiclesList implements OnInit {
     this.errorMessage = '';
     this.fleetService.getVehicles()
       .pipe(
-        timeout(8000),  // se não responder em 8s, dispara erro
-        finalize(() => { this.isLoading = false; })
+        timeout(8000),
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges(); // força re-render independente de zona
+        })
       )
       .subscribe({
         next: (data) => {
