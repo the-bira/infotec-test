@@ -78,6 +78,17 @@ services:
       - mongodb
       - rabbitmq
 
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    container_name: aivacol_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
 volumes:
   mssql_data:
   redis_data:

@@ -47,7 +47,7 @@ Ao inicializar a aplicação, caso a tabela de veículos esteja vazia, o sistema
 
 ## 🚀 Como Executar o Projeto via Docker
 
-O ambiente completo do projeto (Banco SQL Server, Caching Redis e o próprio Servidor Backend compilado) pode ser inicializado com um único comando.
+O ambiente completo do projeto (Banco SQL Server, Caching Redis, MongoDB para Auditoria, RabbitMQ para Mensageria, o Servidor Backend e a aplicação Frontend Angular) pode ser inicializado de forma integrada com um único comando.
 
 ### Pré-requisitos
 * Ter o **Docker** e o **Docker Compose** instalados na máquina.
@@ -57,11 +57,14 @@ O ambiente completo do projeto (Banco SQL Server, Caching Redis e o próprio Ser
    ```bash
    cp .env.example .env
    ```
-2. Na raiz do repositório, execute o comando para baixar as imagens e construir o ambiente:
+2. Na raiz do repositório, execute o comando para baixar as imagens e construir todo o ecossistema:
    ```bash
    docker compose up --build -d
    ```
-3. Após o término da compilação e inicialização dos contêineres, o backend estará ativo e respondendo na porta **`3000`**.
+3. Após o término da compilação e inicialização dos contêineres:
+   * **Frontend Angular** estará ativo e acessível em: **`http://localhost:4200`**
+   * **Backend NestJS** estará ativo e respondendo na porta **`3000`** (ex: `http://localhost:3000`)
+   * **RabbitMQ Management Dashboard** estará ativo em: `http://localhost:15672` (com usuário/senha `guest`/`guest`)
 
 ---
 
