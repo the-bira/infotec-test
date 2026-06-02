@@ -34,6 +34,11 @@
       <div class="loader">Carregando frota...</div>
     </div>
 
+    <!-- Alerta de Erro -->
+    <div *ngIf="!isLoading && errorMessage" class="error-banner">
+      ⚠️ {{ errorMessage }}
+    </div>
+
     <!-- Listagem em Tabela -->
     <div *ngIf="!isLoading" class="table-container">
       <table class="fleet-table">

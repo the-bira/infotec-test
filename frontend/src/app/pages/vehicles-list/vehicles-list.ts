@@ -18,6 +18,7 @@ export class VehiclesList implements OnInit {
   filteredVehicles: IVehicle[] = [];
   searchQuery = '';
   isLoading = false;
+  errorMessage = '';
   username = '';
   tenantId = '';
 
@@ -35,6 +36,7 @@ export class VehiclesList implements OnInit {
 
   loadVehicles(): void {
     this.isLoading = true;
+    this.errorMessage = '';
     this.fleetService.getVehicles().subscribe({
       next: (data) => {
         this.vehicles = data;
@@ -43,6 +45,7 @@ export class VehiclesList implements OnInit {
       },
       error: (err) => {
         console.error('Erro ao buscar veículos:', err);
+        this.errorMessage = `Erro ao carregar veículos (${err?.status ?? 'sem conexão'}). Verifique se o backend está acessível em localhost:3000.`;
         this.isLoading = false;
       }
     });

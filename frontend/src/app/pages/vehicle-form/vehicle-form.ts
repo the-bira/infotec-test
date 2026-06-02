@@ -57,7 +57,7 @@ export class VehicleForm implements OnInit {
       renavam: ['', [Validators.required]],
       year: [new Date().getFullYear(), [Validators.required]],
       brand_id: ['', [Validators.required]],
-      model_id: ['', [Validators.required]]
+      model_id: [{ value: '', disabled: true }, [Validators.required]]
     });
   }
 
@@ -67,17 +67,16 @@ export class VehicleForm implements OnInit {
 
   loadInitialData(): void {
     this.isLoading = true;
-    
-    // Fetch brands and models in parallel
+    this.errorMessage = '';
+
     this.fleetService.getBrands().subscribe({
       next: (brandsData) => {
         this.brands = brandsData;
-        
+
         this.fleetService.getModels().subscribe({
           next: (modelsData) => {
             this.allModels = modelsData;
-            
-            // Check if in edit mode
+
             const idParam = this.route.snapshot.paramMap.get('id');
             if (idParam) {
               this.isEditMode = true;
@@ -88,13 +87,15 @@ export class VehicleForm implements OnInit {
             }
           },
           error: (err) => {
-            console.error(err);
+            console.error('Erro ao carregar modelos:', err);
+            this.errorMessage = `Erro ao carregar modelos (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
             this.isLoading = false;
           }
         });
       },
       error: (err) => {
-        console.error(err);
+        console.error('Erro ao carregar marcas:', err);
+        this.errorMessage = `Erro ao carregar marcas (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
         this.isLoading = false;
       }
     });
@@ -104,7 +105,14 @@ export class VehicleForm implements OnInit {
     this.fleetService.getVehicle(id).subscribe({
       next: (vehicle) => {
         this.selectedBrandId = vehicle.model?.brand_id;
-        
+
+        this.filterModelsByBrand(this.selectedBrandId);
+
+        // Enable model control before patching so value is accepted
+        if (this.selectedBrandId) {
+          this.vehicleForm.get('model_id')?.enable();
+        }
+
         this.vehicleForm.patchValue({
           license_plate: vehicle.license_plate,
           chassis: vehicle.chassis,
@@ -113,13 +121,12 @@ export class VehicleForm implements OnInit {
           brand_id: this.selectedBrandId,
           model_id: vehicle.model_id
         });
-        
-        this.filterModelsByBrand(this.selectedBrandId);
+
         this.isLoading = false;
       },
       error: (err) => {
         console.error(err);
-        this.errorMessage = 'Não foi possível carregar os dados do veículo.';
+        this.errorMessage = 'Não foi possível carregar os dados do veículo. Verifique o console.';
         this.isLoading = false;
       }
     });
@@ -129,11 +136,17 @@ export class VehicleForm implements OnInit {
     const brandIdValue = event.target.value;
     const brandId = brandIdValue ? Number(brandIdValue) : undefined;
     this.selectedBrandId = brandId;
-    
+
     this.filterModelsByBrand(brandId);
-    
+
     // Clear and reset the model selection
-    this.vehicleForm.get('model_id')?.setValue('');
+    const modelCtrl = this.vehicleForm.get('model_id');
+    modelCtrl?.setValue('');
+    if (brandId) {
+      modelCtrl?.enable();
+    } else {
+      modelCtrl?.disable();
+    }
   }
 
   filterModelsByBrand(brandId?: number): void {
@@ -145,8 +158,8 @@ export class VehicleForm implements OnInit {
   }
 
   onSubmit(): void {
-    // Map year and model_id to numbers for Zod validation
-    const formValue = this.vehicleForm.value;
+    // getRawValue() reads even disabled controls (model_id is disabled until brand is selected)
+    const formValue = this.vehicleForm.getRawValue();
     const payload = {
       license_plate: formValue.license_plate,
       chassis: formValue.chassis,

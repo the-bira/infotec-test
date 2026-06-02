@@ -70,8 +70,8 @@
           <!-- Campo Modelo (Select Customizado) -->
           <div class="form-field select-field">
             <label class="custom-label">Modelo</label>
-            <select formControlName="model_id" class="custom-select" [disabled]="!selectedBrandId">
-              <option value="" disabled selected>Selecione um modelo</option>
+            <select formControlName="model_id" class="custom-select">
+              <option value="" disabled>{{ selectedBrandId ? 'Selecione um modelo' : 'Selecione uma marca primeiro' }}</option>
               <option *ngFor="let model of filteredModels" [value]="model.id">{{ model.name }}</option>
             </select>
           </div>
