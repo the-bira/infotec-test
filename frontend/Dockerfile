@@ -20,6 +20,10 @@ RUN pnpm install --filter frontend... --filter shared --no-frozen-lockfile
 COPY shared ./shared
 COPY frontend ./frontend
 
+# Build the shared workspace library first
+WORKDIR /usr/src/app/shared
+RUN pnpm run build
+
 # Build the Angular frontend application
 WORKDIR /usr/src/app/frontend
 RUN pnpm run build
