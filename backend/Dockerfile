@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies (including devDependencies for building)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy application source code
 COPY . .
@@ -28,7 +28,7 @@ WORKDIR /usr/src/app
 COPY package.json pnpm-lock.yaml ./
 
 # Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --no-frozen-lockfile
 
 # Copy build artifacts and seed file from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
