@@ -7,6 +7,7 @@ import { VehiclesService } from './vehicles.service';
 import { Vehicle } from './entities/vehicle.entity';
 import { ModelsService } from '../models/models.service';
 import { BrandsService } from '../brands/brands.service';
+import { SettingsService } from '../settings/settings.service';
 import { Model } from '../models/entities/model.entity';
 import { Brand } from '../brands/entities/brand.entity';
 import * as fs from 'fs';
@@ -82,6 +83,17 @@ describe('VehiclesService', () => {
     del: jest.fn(),
   };
 
+  const mockSettingsService = {
+    findByTenant: jest.fn().mockResolvedValue({
+      cache_enabled: true,
+      cache_ttl: 60,
+    }),
+  };
+
+  const mockAuditClient = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -101,6 +113,14 @@ describe('VehiclesService', () => {
         {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
+        },
+        {
+          provide: SettingsService,
+          useValue: mockSettingsService,
+        },
+        {
+          provide: 'AUDIT_SERVICE',
+          useValue: mockAuditClient,
         },
       ],
     }).compile();
@@ -237,6 +257,7 @@ describe('VehiclesService', () => {
         1,
         { year: 2023 },
         'aivacol',
+        'aivacol',
       );
 
       expect(result.year).toEqual(2023);
@@ -251,7 +272,7 @@ describe('VehiclesService', () => {
       mockVehicleRepository.findOne.mockResolvedValue(mockVehicle);
       mockVehicleRepository.delete.mockResolvedValue({ affected: 1 });
 
-      await service.remove(1, 'aivacol');
+      await service.remove(1, 'aivacol', 'aivacol');
 
       expect(cacheManager.del).toHaveBeenCalledWith('vehicles:aivacol');
       expect(cacheManager.del).toHaveBeenCalledWith('vehicle:aivacol:1');
