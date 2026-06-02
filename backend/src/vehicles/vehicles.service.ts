@@ -57,7 +57,7 @@ export class VehiclesService implements OnModuleInit {
 
     const vehicles = await this.vehicleRepository.find({
       where: { tenant_id: tenantId },
-      relations: ['model', 'model.brand'],
+      relations: { model: { brand: true } },
     });
 
     await this.cacheManager.set(cacheKey, vehicles);
@@ -73,7 +73,7 @@ export class VehiclesService implements OnModuleInit {
 
     const vehicle = await this.vehicleRepository.findOne({
       where: { id, tenant_id: tenantId },
-      relations: ['model', 'model.brand'],
+      relations: { model: { brand: true } },
     });
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);

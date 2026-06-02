@@ -34,14 +34,14 @@ export class ModelsService {
   async findAll(tenantId: string): Promise<Model[]> {
     return this.modelRepository.find({
       where: { tenant_id: tenantId },
-      relations: ['brand'],
+      relations: { brand: true },
     });
   }
 
   async findOne(id: number, tenantId: string): Promise<Model> {
     const model = await this.modelRepository.findOne({
       where: { id, tenant_id: tenantId },
-      relations: ['brand'],
+      relations: { brand: true },
     });
     if (!model) {
       throw new NotFoundException(`Model with ID ${id} not found`);
