@@ -5,6 +5,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FleetService } from '../../core/services/fleet';
 import { IBrand, IModel } from '@aivacol/shared';
 import { z } from 'zod';
+import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 // Taiga UI
 import { TuiButton, TuiTextfield, TuiInput, TuiLabel } from '@taiga-ui/core';
@@ -69,67 +71,64 @@ export class VehicleForm implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.fleetService.getBrands().subscribe({
-      next: (brandsData) => {
-        this.brands = brandsData;
-
-        this.fleetService.getModels().subscribe({
-          next: (modelsData) => {
-            this.allModels = modelsData;
-
-            const idParam = this.route.snapshot.paramMap.get('id');
-            if (idParam) {
-              this.isEditMode = true;
-              this.vehicleId = Number(idParam);
-              this.loadVehicleForEdit(this.vehicleId);
-            } else {
-              this.isLoading = false;
-            }
-          },
-          error: (err) => {
-            console.error('Erro ao carregar modelos:', err);
-            this.errorMessage = `Erro ao carregar modelos (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
+    // forkJoin dispara as duas requisições em paralelo e só emite quando ambas completam
+    forkJoin({
+      brands: this.fleetService.getBrands(),
+      models: this.fleetService.getModels()
+    })
+      .pipe(
+        // finalize = "finally": sempre executa ao completar ou ao dar erro
+        finalize(() => {
+          const idParam = this.route.snapshot.paramMap.get('id');
+          if (idParam) {
+            // Modo edição: isLoading fica true até loadVehicleForEdit terminar
+            this.isEditMode = true;
+            this.vehicleId = Number(idParam);
+            this.loadVehicleForEdit(this.vehicleId);
+          } else {
+            // Modo criação: libera o loading aqui
             this.isLoading = false;
           }
-        });
-      },
-      error: (err) => {
-        console.error('Erro ao carregar marcas:', err);
-        this.errorMessage = `Erro ao carregar marcas (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
-        this.isLoading = false;
-      }
-    });
+        })
+      )
+      .subscribe({
+        next: ({ brands, models }) => {
+          this.brands = brands;
+          this.allModels = models;
+        },
+        error: (err) => {
+          console.error('Erro ao carregar dados iniciais:', err);
+          this.errorMessage = `Erro ao carregar dados (${err?.status ?? 'sem conexão'}). Verifique se o backend está rodando.`;
+        }
+      });
   }
 
   loadVehicleForEdit(id: number): void {
-    this.fleetService.getVehicle(id).subscribe({
-      next: (vehicle) => {
-        this.selectedBrandId = vehicle.model?.brand_id;
+    this.fleetService.getVehicle(id)
+      .pipe(finalize(() => { this.isLoading = false; }))
+      .subscribe({
+        next: (vehicle) => {
+          this.selectedBrandId = vehicle.model?.brand_id;
+          this.filterModelsByBrand(this.selectedBrandId);
 
-        this.filterModelsByBrand(this.selectedBrandId);
+          if (this.selectedBrandId) {
+            this.vehicleForm.get('model_id')?.enable();
+          }
 
-        // Enable model control before patching so value is accepted
-        if (this.selectedBrandId) {
-          this.vehicleForm.get('model_id')?.enable();
+          this.vehicleForm.patchValue({
+            license_plate: vehicle.license_plate,
+            chassis: vehicle.chassis,
+            renavam: vehicle.renavam,
+            year: vehicle.year,
+            brand_id: this.selectedBrandId,
+            model_id: vehicle.model_id
+          });
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Não foi possível carregar os dados do veículo. Verifique o console.';
         }
-
-        this.vehicleForm.patchValue({
-          license_plate: vehicle.license_plate,
-          chassis: vehicle.chassis,
-          renavam: vehicle.renavam,
-          year: vehicle.year,
-          brand_id: this.selectedBrandId,
-          model_id: vehicle.model_id
-        });
-
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error(err);
-        this.errorMessage = 'Não foi possível carregar os dados do veículo. Verifique o console.';
-        this.isLoading = false;
-      }
-    });
+      });
   }
 
   onBrandChange(event: any): void {
@@ -139,7 +138,6 @@ export class VehicleForm implements OnInit {
 
     this.filterModelsByBrand(brandId);
 
-    // Clear and reset the model selection
     const modelCtrl = this.vehicleForm.get('model_id');
     modelCtrl?.setValue('');
     if (brandId) {
@@ -158,7 +156,6 @@ export class VehicleForm implements OnInit {
   }
 
   onSubmit(): void {
-    // getRawValue() reads even disabled controls (model_id is disabled until brand is selected)
     const formValue = this.vehicleForm.getRawValue();
     const payload = {
       license_plate: formValue.license_plate,
@@ -177,30 +174,22 @@ export class VehicleForm implements OnInit {
     this.isSaving = true;
     this.errorMessage = '';
 
-    if (this.isEditMode && this.vehicleId) {
-      this.fleetService.updateVehicle(this.vehicleId, validation.data).subscribe({
+    const save$ = this.isEditMode && this.vehicleId
+      ? this.fleetService.updateVehicle(this.vehicleId, validation.data)
+      : this.fleetService.createVehicle(validation.data);
+
+    save$
+      .pipe(finalize(() => { this.isSaving = false; }))
+      .subscribe({
         next: () => {
-          this.isSaving = false;
           this.router.navigate(['/vehicles']);
         },
         error: (err) => {
-          this.isSaving = false;
-          this.errorMessage = 'Erro ao atualizar veículo. Verifique se os dados são únicos.';
           console.error(err);
+          this.errorMessage = this.isEditMode
+            ? 'Erro ao atualizar veículo. Verifique se os dados são únicos.'
+            : 'Erro ao cadastrar veículo. Verifique se placa, chassi ou renavam já existem.';
         }
       });
-    } else {
-      this.fleetService.createVehicle(validation.data).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.router.navigate(['/vehicles']);
-        },
-        error: (err) => {
-          this.isSaving = false;
-          this.errorMessage = 'Erro ao cadastrar veículo. Verifique se placa, chassi ou renavam já existem.';
-          console.error(err);
-        }
-      });
-    }
   }
 }

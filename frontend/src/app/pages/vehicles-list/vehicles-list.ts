@@ -5,6 +5,7 @@ import { FleetService } from '../../core/services/fleet';
 import { Auth } from '../../core/services/auth';
 import { IVehicle } from '@aivacol/shared';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-vehicles-list',
@@ -37,18 +38,18 @@ export class VehiclesList implements OnInit {
   loadVehicles(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.fleetService.getVehicles().subscribe({
-      next: (data) => {
-        this.vehicles = data;
-        this.applyFilter();
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Erro ao buscar veículos:', err);
-        this.errorMessage = `Erro ao carregar veículos (${err?.status ?? 'sem conexão'}). Verifique se o backend está acessível em localhost:3000.`;
-        this.isLoading = false;
-      }
-    });
+    this.fleetService.getVehicles()
+      .pipe(finalize(() => { this.isLoading = false; }))
+      .subscribe({
+        next: (data) => {
+          this.vehicles = data;
+          this.applyFilter();
+        },
+        error: (err) => {
+          console.error('Erro ao buscar veículos:', err);
+          this.errorMessage = `Erro ao carregar veículos (${err?.status ?? 'sem conexão'}). Verifique se o backend está acessível em localhost:3000.`;
+        }
+      });
   }
 
   applyFilter(): void {
