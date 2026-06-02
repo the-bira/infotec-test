@@ -1,0 +1,155 @@
+<div class="dashboard-container">
+  <!-- Barra de Navegação Superior -->
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="logo-text">Aivacol Fleet</span>
+    </div>
+    <div class="navbar-user">
+      <a routerLink="/vehicles" class="back-link">&larr; Voltar para a Frota</a>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <div class="settings-card">
+      <h1 class="settings-title">Configurações do Sistema</h1>
+      <p class="settings-subtitle">Gerencie o comportamento do cache Redis e monitore auditorias em MongoDB</p>
+
+      <!-- Tab Navigation -->
+      <div class="settings-tabs">
+        <button
+          type="button"
+          class="settings-tab-btn"
+          [class.active]="activeTab === 'cache'"
+          (click)="setTab('cache')"
+        >
+          Cache (Redis)
+        </button>
+        <button
+          type="button"
+          class="settings-tab-btn"
+          [class.active]="activeTab === 'audit'"
+          (click)="setTab('audit')"
+        >
+          Auditoria (MongoDB)
+        </button>
+      </div>
+
+      <!-- Indicador de Carregamento -->
+      <div *ngIf="isLoading" class="loader-container">
+        <div class="loader">Carregando dados...</div>
+      </div>
+
+      <!-- Mensagem de Sucesso -->
+      <div *ngIf="message && !isLoading" class="success-banner mb-3">
+        {{ message }}
+      </div>
+
+      <!-- Alerta de Erro -->
+      <div *ngIf="errorMessage && !isLoading" class="error-banner mb-3">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Corpo da Configuração -->
+      <div *ngIf="!isLoading" class="settings-body">
+        
+        <!-- 1. Configurações de Cache -->
+        <div *ngIf="activeTab === 'cache'" class="tab-content">
+          <form (ngSubmit)="saveCacheSettings()" class="settings-form">
+            <!-- Toggle Habilitar/Desabilitar Cache -->
+            <div class="form-field toggle-field">
+              <label class="toggle-container">
+                <input type="checkbox" [(ngModel)]="cacheEnabled" name="cacheEnabled" />
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Habilitar Cache com Redis</span>
+              </label>
+              <p class="field-help">Quando desabilitado, as requisições irão direto ao banco SQL Server ignorando o Redis.</p>
+            </div>
+
+            <!-- Campo TTL (Time-To-Live) -->
+            <div class="form-field">
+              <tui-textfield>
+                <label tuiLabel>Tempo de Expiração do Cache (TTL em segundos)</label>
+                <input tuiInput type="number" [(ngModel)]="cacheTtl" name="cacheTtl" placeholder="Ex: 60" min="1" />
+              </tui-textfield>
+              <p class="field-help">Define por quanto tempo os dados ficarão em cache antes de expirar.</p>
+            </div>
+
+            <!-- Ações -->
+            <div class="form-actions">
+              <button
+                tuiButton
+                type="button"
+                appearance="flat"
+                class="clear-cache-btn"
+                [disabled]="isSaving"
+                (click)="clearCache()"
+              >
+                Limpar Cache
+              </button>
+              <button
+                tuiButton
+                type="submit"
+                class="save-settings-btn"
+                [disabled]="isSaving"
+              >
+                {{ isSaving ? 'Salvando...' : 'Salvar Alterações' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 2. Logs de Auditoria -->
+        <div *ngIf="activeTab === 'audit'" class="tab-content">
+          <div class="table-container">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Usuário</th>
+                  <th>Evento</th>
+                  <th>Detalhes (Payload)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="auditLogs.length === 0">
+                  <td colspan="4" class="empty-row">Nenhum evento registrado no MongoDB.</td>
+                </tr>
+                <tr *ngFor="let log of auditLogs">
+                  <td class="date-cell">{{ log.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                  <td class="user-cell"><span class="user-badge">{{ log.user }}</span></td>
+                  <td class="event-cell"><span class="event-badge" [class]="log.event.replace('.', '-')">{{ log.event }}</span></td>
+                  <td class="payload-cell">
+                    <code>{{ formatPayload(log.payload) }}</code>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginação de Logs -->
+          <div *ngIf="totalLogPages > 1" class="audit-pagination">
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="logPage === 1"
+              (click)="changeLogPage(logPage - 1)"
+            >
+              &larr; Anterior
+            </button>
+            <span class="paging-info">Página {{ logPage }} de {{ totalLogPages }} (Total: {{ totalLogs }} logs)</span>
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="logPage === totalLogPages"
+              (click)="changeLogPage(logPage + 1)"
+            >
+              Próximo &rarr;
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>

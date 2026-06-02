@@ -75,4 +75,21 @@ export class FleetService {
   deleteVehicle(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/vehicles/${id}`);
   }
+
+  // --- Cache Settings & Audit Logs ---
+  getSettings(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/settings`);
+  }
+
+  updateSettings(settings: { cache_enabled: boolean; cache_ttl: number }): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/settings`, settings);
+  }
+
+  clearCache(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/settings/clear-cache`, {});
+  }
+
+  getAuditLogs(page: number, limit: number): Observable<{ data: any[]; total: number }> {
+    return this.http.get<{ data: any[]; total: number }>(`${this.apiUrl}/audit-logs?page=${page}&limit=${limit}`);
+  }
 }
