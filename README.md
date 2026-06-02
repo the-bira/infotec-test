@@ -1,109 +1,79 @@
-# 🚗 Aivacol - Plataforma de Gestão de Frota (Backend)
+# 🚗 Aivacol - Gestão de Frota
 
-Este repositório contém a implementação do módulo de **Gestão do Ciclo de Vida de Veículos** para a plataforma Aivacol, uma solução inteligente de gestão para locadoras. A solução foi desenhada para ser altamente segura, eficiente e escalável.
-
-A avaliação técnica segue a modalidade **🟦 BACKEND** e foi construída seguindo rigorosamente a metodologia **TDD (Test-Driven Development)** e regras de desenvolvimento limpo.
+Este repositório contém o módulo de **Gestão de Frota** da plataforma Aivacol (com Frontend Angular e Backend NestJS). Toda a aplicação e sua infraestrutura estão prontas para rodar de forma integrada através do Docker.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🚀 Como Executar o Projeto (Docker)
 
-* **Runtime:** Node.js (v18+)
-* **Framework:** NestJS (v11)
-* **Linguagem:** TypeScript
-* **ORM:** TypeORM
-* **Banco de Relacional:** Microsoft SQL Server (via Docker)
-* **Banco de Caching:** Redis 7 (via Docker)
-* **Segurança:** Passport & JWT (JSON Web Tokens)
-* **Testes:** Jest & Supertest
-* **Gerenciador de Pacotes:** pnpm (v10)
-
----
-
-## 📐 Decisões de Arquitetura & Boas Práticas
-
-### 1. Arquitetura Modular
-A estrutura de pastas segue os padrões modulares recomendados pelo NestJS, dividindo a lógica em módulos independentes (`Auth`, `Users`, `Brands`, `Models` e `Vehicles`). Cada módulo possui responsabilidades separadas por camadas:
-* **Entities:** Definição dos esquemas de banco de dados e relacionamentos relacionais.
-* **DTOs:** Objetos de transferência de dados com validações robustas em tempo de execução via `class-validator`.
-* **Services:** Concentração das regras de negócio e persistência no banco de dados.
-* **Controllers:** Exposição de endpoints REST, manipulação de payloads e injeção de segurança.
-
-### 2. Multi-tenant Isolation (Segurança Crítica)
-Em conformidade com as regras de isolamento lógico:
-* **Tenant Id:** O identificador de tenant (`tenantId`) nunca é hardcoded. Ele é incorporado dinamicamente dentro do payload do token JWT no momento do login.
-* **Filtro Estrito:** Todas as consultas no banco de dados (`brands`, `models`, `vehicles`) utilizam cláusulas `WHERE tenant_id = :tenantId` para impedir vazamento de dados entre empresas.
-* **Guarda de Sessão:** Criamos o decorador customizado `@CurrentTenant()` para interceptar de forma limpa e extrair com segurança o tenant do usuário logado diretamente da requisição.
-
-### 3. Caching & Invalidação com Redis
-Para otimizar o tempo de resposta e poupar o banco SQL Server:
-* A listagem geral de veículos e a busca detalhada de veículos são cacheadas no **Redis**.
-* **Invalidação Reativa:** Sempre que houver uma alteração (criação, atualização ou exclusão de veículo), as chaves correspondentes ao tenant no cache são invalidadas no ato, garantindo que o cliente final nunca veja dados obsoletos.
-
-### 4. Seed de Mock Obrigatório
-Ao inicializar a aplicação, caso a tabela de veículos esteja vazia, o sistema lê automaticamente o arquivo `seed_vehicles.json` e realiza o carregamento inicial de marcas, modelos e veículos de teste sob o tenant `"aivacol"`.
-
----
-
-## 🚀 Como Executar o Projeto via Docker
-
-O ambiente completo do projeto (Banco SQL Server, Caching Redis, MongoDB para Auditoria, RabbitMQ para Mensageria, o Servidor Backend e a aplicação Frontend Angular) pode ser inicializado de forma integrada com um único comando.
+Toda a infraestrutura do projeto (SQL Server, Redis, MongoDB, RabbitMQ, API Backend e App Frontend) é inicializada com apenas um comando.
 
 ### Pré-requisitos
-* Ter o **Docker** e o **Docker Compose** instalados na máquina.
+* Ter o **Docker** e o **Docker Compose** instalados.
 
-### Executando:
-1. Copie o arquivo `.env.example` para `.env` na raiz do projeto:
+### Passo a Passo:
+
+1. **Configurar as Variáveis de Ambiente**:
+   Copie ou renomeie o arquivo `.env.example` para `.env` na raiz do projeto:
    ```bash
    cp .env.example .env
    ```
-2. Na raiz do repositório, execute o comando para baixar as imagens e construir todo o ecossistema:
+
+2. **Subir os Containers**:
+   Na raiz do repositório, execute o comando de build e inicialização em background:
    ```bash
    docker compose up --build -d
    ```
-3. Após o término da compilação e inicialização dos contêineres:
-   * **Frontend Angular** estará ativo e acessível em: **`http://localhost:4200`**
-   * **Backend NestJS** estará ativo e respondendo na porta **`3000`** (ex: `http://localhost:3000`)
-   * **RabbitMQ Management Dashboard** estará ativo em: `http://localhost:15672` (com usuário/senha `guest`/`guest`)
+
+3. **Acessar a Aplicação**:
+   * **App Frontend:** [http://localhost:4200](http://localhost:4200) (Usuário padrão: `aivacol` / Senha: `aivacol`)
+   * **API Backend:** [http://localhost:3000](http://localhost:3000)
+   * **RabbitMQ Dashboard:** [http://localhost:15672](http://localhost:15672) (Usuário: `guest` / Senha: `guest`)
 
 ---
 
-## 🧪 Como Executar os Testes (TDD)
+## 🧪 Suíte de Testes Automatizados
 
-Toda a lógica foi desenvolvida escrevendo-se testes antes da implementação. A suíte conta com testes unitários abrangentes e testes de integração de ponta a ponta (E2E).
+O projeto foi desenvolvido seguindo boas práticas de cobertura de testes no frontend e no backend.
 
-### 1. Testes Unitários
-Para rodar os testes unitários (mockados e seguros para rodar isoladamente sem o Docker ativo):
-```bash
-cd backend
-pnpm run test
-```
-
-### 2. Testes de Integração (E2E)
-Para rodar os testes de ponta a ponta (requer que o Docker com os contêineres esteja ativo para testar as transações de verdade):
-```bash
-cd backend
-pnpm run test:e2e
-```
+### O que está sendo testado?
+* **Backend (`backend`)**:
+  * **Autenticação**: Fluxo de login, validações e guarda de rotas JWT.
+  * **Frota (CRUD)**: Validação e persistência isolada por `tenant_id` para Veículos, Marcas e Modelos.
+  * **Configurações**: Ativação dinâmica de Cache, TTL customizado por inquilino e invalidação do Redis.
+  * **Auditoria**: Emissão assíncrona de eventos via RabbitMQ e consumo para gravação no MongoDB.
+* **Frontend (`frontend`)**:
+  * **Acesso**: Fluxo de Login, interceptação do token JWT e proteção de rotas (`AuthGuard`).
+  * **Frota & Formulários**: Listagem, busca reativa, e formulário principal com validações Zod.
+  * **Modal Inline**: Criação, edição e exclusão de marcas/modelos no modal integrado com atualização automática dos campos.
+  * **Painel de Configuração**: Modificação de cache e listagem/paginação dos logs de auditoria carregados do MongoDB.
 
 ---
 
-## 📬 Endpoints da API
+## 💻 Como Rodar os Testes
 
-Todas as rotas operacionais exigem o cabeçalho HTTP `Authorization: Bearer <SEU_TOKEN_JWT>`.
+### 1. Testes Unitários (Isolados / Mockados)
+Esses testes rodam em memória de forma isolada, sem depender dos serviços externos (Docker) estarem ativos.
 
-| Método | Rota | Descrição | Requer Token? |
-| :--- | :--- | :--- | :--- |
-| **POST** | `/auth/login` | Login com credentials padrão (`aivacol` / `aivacol`). Retorna JWT. | Não |
-| **POST** | `/brands` | Cadastra uma nova marca. | Sim |
-| **GET** | `/brands` | Lista as marcas do tenant logado. | Sim |
-| **GET** | `/brands/:id` | Detalha uma marca específica. | Sim |
-| **PUT** | `/brands/:id` | Atualiza dados de uma marca. | Sim |
-| **DELETE** | `/brands/:id` | Exclui uma marca do tenant. | Sim |
-| **POST** | `/models` | Cadastra um novo modelo atrelado a uma Brand. | Sim |
-| **GET** | `/models` | Lista modelos do tenant. | Sim |
-| **POST** | `/vehicles` | Cadastra um novo veículo atrelado a um Model. | Sim |
-| **GET** | `/vehicles` | Lista veículos do tenant (com Cache via Redis). | Sim |
-| **GET** | `/vehicles/:id` | Detalha um veículo (com Cache via Redis). | Sim |
-| **PUT** | `/vehicles/:id` | Atualiza dados de um veículo (invalida o Cache). | Sim |
-| **DELETE** | `/vehicles/:id` | Remove um veículo (invalida o Cache). | Sim |
+* **Rodar testes do Backend (NestJS / Jest)**:
+  ```bash
+  cd backend
+  pnpm install
+  pnpm run test
+  ```
+
+* **Rodar testes do Frontend (Angular / Vitest)**:
+  ```bash
+  cd frontend
+  pnpm install
+  pnpm run test
+  ```
+
+### 2. Testes de Integração e Ponta a Ponta (E2E)
+*Estes testes necessitam que os serviços do Docker estejam online para validar a comunicação real com os bancos de dados.*
+
+* **Rodar testes E2E do Backend**:
+  ```bash
+  cd backend
+  pnpm run test:e2e
+  ```
