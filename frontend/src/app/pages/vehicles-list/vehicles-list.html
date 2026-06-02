@@ -1,0 +1,67 @@
+<div class="dashboard-container">
+  <!-- Barra de Navegação Superior -->
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="logo-text">Aivacol Fleet</span>
+      <span class="tenant-badge" *ngIf="tenantId">{{ tenantId | uppercase }}</span>
+    </div>
+    <div class="navbar-user">
+      <span>Bem-vindo, <strong>{{ username }}</strong></span>
+      <button class="logout-btn" (click)="logout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <div class="content-header">
+      <h1 class="page-title">Gestão de Veículos</h1>
+      <a routerLink="/vehicles/new" class="add-btn">+ Cadastrar Veículo</a>
+    </div>
+
+    <!-- Filtro de Busca -->
+    <div class="filter-section">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        (ngModelChange)="applyFilter()" 
+        placeholder="Buscar por placa, modelo ou marca..."
+        class="search-input"
+      />
+    </div>
+
+    <!-- Indicador de Carregamento -->
+    <div *ngIf="isLoading" class="loader-container">
+      <div class="loader">Carregando frota...</div>
+    </div>
+
+    <!-- Listagem em Tabela -->
+    <div *ngIf="!isLoading" class="table-container">
+      <table class="fleet-table">
+        <thead>
+          <tr>
+            <th>Placa</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Ano</th>
+            <th class="actions-col">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let vehicle of filteredVehicles">
+            <td class="plate-cell">{{ vehicle.license_plate }}</td>
+            <td>{{ vehicle.model?.brand?.name || '-' }}</td>
+            <td>{{ vehicle.model?.name || '-' }}</td>
+            <td>{{ vehicle.year }}</td>
+            <td class="actions-cell">
+              <a [routerLink]="['/vehicles/edit', vehicle.id]" class="edit-link">Editar</a>
+              <button (click)="onDelete(vehicle.id)" class="delete-btn">Excluir</button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredVehicles.length === 0">
+            <td colspan="5" class="empty-cell">Nenhum veículo encontrado nesta frota.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
