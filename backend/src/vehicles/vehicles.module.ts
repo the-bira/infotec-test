@@ -5,9 +5,15 @@ import { VehiclesService } from './vehicles.service';
 import { VehiclesController } from './vehicles.controller';
 import { ModelsModule } from '../models/models.module';
 import { BrandsModule } from '../brands/brands.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vehicle]), ModelsModule, BrandsModule],
+  imports: [
+    TypeOrmModule.forFeature([Vehicle]),
+    ModelsModule,
+    BrandsModule,
+    SettingsModule,
+  ],
   controllers: [VehiclesController],
   providers: [VehiclesService],
   exports: [VehiclesService],

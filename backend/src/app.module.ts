@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { MongooseModule } from '@nestjs/mongoose';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,6 +12,9 @@ import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
 import { ModelsModule } from './models/models.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { SettingsModule } from './settings/settings.module';
+import { AuditModule } from './audit/audit.module';
+import { RabbitMQModule } from './config/rabbitmq.module';
 
 @Module({
   imports: [
@@ -24,6 +28,9 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     BrandsModule,
     ModelsModule,
     VehiclesModule,
+    SettingsModule,
+    AuditModule,
+    RabbitMQModule,
 
     // 2. Establish Database Connection (SQL Server) via TypeORM
     TypeOrmModule.forRootAsync({
@@ -58,6 +65,22 @@ import { VehiclesModule } from './vehicles/vehicles.module';
           },
         });
         return { store };
+      },
+    }),
+
+    // 4. Initialize MongoDB Connection via Mongoose
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const username = configService.get<string>('MONGO_USERNAME');
+        const password = configService.get<string>('MONGO_PASSWORD');
+        const host = configService.get<string>('MONGO_HOST');
+        const port = configService.get<number>('MONGO_PORT');
+        const database = configService.get<string>('MONGO_DATABASE');
+        return {
+          uri: `mongodb://${username}:${password}@${host}:${port}/${database}?authSource=admin`,
+        };
       },
     }),
   ],
