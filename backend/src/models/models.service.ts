@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Model } from './entities/model.entity';
 import { CreateModelDto } from './dto/create-model.dto';
 import { UpdateModelDto } from './dto/update-model.dto';
 import { BrandsService } from '../brands/brands.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class ModelsService {
@@ -12,6 +13,8 @@ export class ModelsService {
     @InjectRepository(Model)
     private readonly modelRepository: Repository<Model>,
     private readonly brandsService: BrandsService,
+    @Inject('AUDIT_SERVICE')
+    private readonly auditClient: ClientProxy,
   ) {}
 
   async create(
@@ -28,7 +31,17 @@ export class ModelsService {
       tenant_id: tenantId,
       created_by: username,
     });
-    return this.modelRepository.save(model);
+    const saved = await this.modelRepository.save(model);
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'model.created',
+      tenantId,
+      user: username,
+      payload: { id: saved.id, name: saved.name, brand_id: saved.brand_id },
+    });
+
+    return saved;
   }
 
   async findAll(tenantId: string): Promise<Model[]> {
@@ -53,14 +66,33 @@ export class ModelsService {
     id: number,
     updateModelDto: UpdateModelDto,
     tenantId: string,
+    username: string,
   ): Promise<Model> {
     const model = await this.findOne(id, tenantId);
     Object.assign(model, updateModelDto);
-    return this.modelRepository.save(model);
+    const saved = await this.modelRepository.save(model);
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'model.updated',
+      tenantId,
+      user: username,
+      payload: { id, changes: updateModelDto },
+    });
+
+    return saved;
   }
 
-  async remove(id: number, tenantId: string): Promise<void> {
+  async remove(id: number, tenantId: string, username: string): Promise<void> {
     const model = await this.findOne(id, tenantId);
     await this.modelRepository.delete({ id: model.id, tenant_id: tenantId });
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'model.deleted',
+      tenantId,
+      user: username,
+      payload: { id, name: model.name },
+    });
   }
 }

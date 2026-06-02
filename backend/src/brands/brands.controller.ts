@@ -49,15 +49,19 @@ export class BrandsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBrandDto: UpdateBrandDto,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.brandsService.update(id, updateBrandDto, tenantId);
+    const username = req.user.nickname;
+    return this.brandsService.update(id, updateBrandDto, tenantId, username);
   }
 
   @Delete(':id')
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.brandsService.remove(id, tenantId);
+    const username = req.user.nickname;
+    return this.brandsService.remove(id, tenantId, username);
   }
 }

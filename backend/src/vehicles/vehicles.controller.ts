@@ -49,15 +49,19 @@ export class VehiclesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateVehicleDto: UpdateVehicleDto,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.vehiclesService.update(id, updateVehicleDto, tenantId);
+    const username = req.user.nickname;
+    return this.vehiclesService.update(id, updateVehicleDto, tenantId, username);
   }
 
   @Delete(':id')
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.vehiclesService.remove(id, tenantId);
+    const username = req.user.nickname;
+    return this.vehiclesService.remove(id, tenantId, username);
   }
 }

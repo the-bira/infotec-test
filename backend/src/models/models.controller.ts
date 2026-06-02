@@ -49,15 +49,19 @@ export class ModelsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateModelDto: UpdateModelDto,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.modelsService.update(id, updateModelDto, tenantId);
+    const username = req.user.nickname;
+    return this.modelsService.update(id, updateModelDto, tenantId, username);
   }
 
   @Delete(':id')
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentTenant() tenantId: string,
+    @Request() req,
   ) {
-    return this.modelsService.remove(id, tenantId);
+    const username = req.user.nickname;
+    return this.modelsService.remove(id, tenantId, username);
   }
 }

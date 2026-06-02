@@ -10,6 +10,8 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { ModelsService } from '../models/models.service';
 import { BrandsService } from '../brands/brands.service';
+import { SettingsService } from '../settings/settings.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class VehiclesService implements OnModuleInit {
@@ -20,6 +22,9 @@ export class VehiclesService implements OnModuleInit {
     private readonly brandsService: BrandsService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly settingsService: SettingsService,
+    @Inject('AUDIT_SERVICE')
+    private readonly auditClient: ClientProxy,
   ) {}
 
   async onModuleInit() {
@@ -45,14 +50,26 @@ export class VehiclesService implements OnModuleInit {
     // 3. Invalidate vehicles list cache
     await this.cacheManager.del(`vehicles:${tenantId}`);
 
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'vehicle.created',
+      tenantId,
+      user: username,
+      payload: { id: saved.id, license_plate: saved.license_plate, model_id: saved.model_id },
+    });
+
     return saved;
   }
 
   async findAll(tenantId: string): Promise<Vehicle[]> {
+    const settings = await this.settingsService.findByTenant(tenantId);
     const cacheKey = `vehicles:${tenantId}`;
-    const cached = await this.cacheManager.get<Vehicle[]>(cacheKey);
-    if (cached) {
-      return cached;
+
+    if (settings.cache_enabled) {
+      const cached = await this.cacheManager.get<Vehicle[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
 
     const vehicles = await this.vehicleRepository.find({
@@ -60,15 +77,22 @@ export class VehiclesService implements OnModuleInit {
       relations: { model: { brand: true } },
     });
 
-    await this.cacheManager.set(cacheKey, vehicles);
+    if (settings.cache_enabled) {
+      // TTL is stored in seconds in DB, convert to ms if required or pass as config depending on cache-manager version
+      await this.cacheManager.set(cacheKey, vehicles, settings.cache_ttl);
+    }
     return vehicles;
   }
 
   async findOne(id: number, tenantId: string): Promise<Vehicle> {
+    const settings = await this.settingsService.findByTenant(tenantId);
     const cacheKey = `vehicle:${tenantId}:${id}`;
-    const cached = await this.cacheManager.get<Vehicle>(cacheKey);
-    if (cached) {
-      return cached;
+
+    if (settings.cache_enabled) {
+      const cached = await this.cacheManager.get<Vehicle>(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
 
     const vehicle = await this.vehicleRepository.findOne({
@@ -79,7 +103,9 @@ export class VehiclesService implements OnModuleInit {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);
     }
 
-    await this.cacheManager.set(cacheKey, vehicle);
+    if (settings.cache_enabled) {
+      await this.cacheManager.set(cacheKey, vehicle, settings.cache_ttl);
+    }
     return vehicle;
   }
 
@@ -87,6 +113,7 @@ export class VehiclesService implements OnModuleInit {
     id: number,
     updateVehicleDto: UpdateVehicleDto,
     tenantId: string,
+    username: string,
   ): Promise<Vehicle> {
     const vehicle = await this.findOne(id, tenantId);
     Object.assign(vehicle, updateVehicleDto);
@@ -96,16 +123,32 @@ export class VehiclesService implements OnModuleInit {
     await this.cacheManager.del(`vehicles:${tenantId}`);
     await this.cacheManager.del(`vehicle:${tenantId}:${id}`);
 
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'vehicle.updated',
+      tenantId,
+      user: username,
+      payload: { id, changes: updateVehicleDto },
+    });
+
     return updated;
   }
 
-  async remove(id: number, tenantId: string): Promise<void> {
+  async remove(id: number, tenantId: string, username: string): Promise<void> {
     const vehicle = await this.findOne(id, tenantId);
     await this.vehicleRepository.delete({ id: vehicle.id, tenant_id: tenantId });
 
     // Invalidate caches
     await this.cacheManager.del(`vehicles:${tenantId}`);
     await this.cacheManager.del(`vehicle:${tenantId}:${id}`);
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'vehicle.deleted',
+      tenantId,
+      user: username,
+      payload: { id, license_plate: vehicle.license_plate },
+    });
   }
 
   async seedInitialVehicles(): Promise<void> {

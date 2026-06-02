@@ -1,15 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Brand } from './entities/brand.entity';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class BrandsService {
   constructor(
     @InjectRepository(Brand)
     private readonly brandRepository: Repository<Brand>,
+    @Inject('AUDIT_SERVICE')
+    private readonly auditClient: ClientProxy,
   ) {}
 
   async create(
@@ -22,7 +25,17 @@ export class BrandsService {
       tenant_id: tenantId,
       created_by: username,
     });
-    return this.brandRepository.save(brand);
+    const saved = await this.brandRepository.save(brand);
+    
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'brand.created',
+      tenantId,
+      user: username,
+      payload: { id: saved.id, name: saved.name },
+    });
+
+    return saved;
   }
 
   async findAll(tenantId: string): Promise<Brand[]> {
@@ -45,14 +58,33 @@ export class BrandsService {
     id: number,
     updateBrandDto: UpdateBrandDto,
     tenantId: string,
+    username: string,
   ): Promise<Brand> {
     const brand = await this.findOne(id, tenantId);
     Object.assign(brand, updateBrandDto);
-    return this.brandRepository.save(brand);
+    const saved = await this.brandRepository.save(brand);
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'brand.updated',
+      tenantId,
+      user: username,
+      payload: { id, changes: updateBrandDto },
+    });
+
+    return saved;
   }
 
-  async remove(id: number, tenantId: string): Promise<void> {
+  async remove(id: number, tenantId: string, username: string): Promise<void> {
     const brand = await this.findOne(id, tenantId);
     await this.brandRepository.delete({ id: brand.id, tenant_id: tenantId });
+
+    // Emit audit log to RabbitMQ
+    this.auditClient.emit('audit.log', {
+      event: 'brand.deleted',
+      tenantId,
+      user: username,
+      payload: { id, name: brand.name },
+    });
   }
 }
