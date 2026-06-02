@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 WORKDIR /usr/src/app
 
 # Copy root monorepo configuration and lockfile
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 
 # Copy package descriptors for monorepo filters
 COPY shared/package.json ./shared/
