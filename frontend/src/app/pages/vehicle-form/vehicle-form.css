@@ -1,0 +1,175 @@
+.dashboard-container {
+  min-height: 100vh;
+  background-color: #0b0f19;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #f1f1f1;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #111827;
+  border-bottom: 1px solid #1f2937;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #a855f7, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.back-link {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #fff;
+}
+
+.main-content {
+  max-width: 600px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+
+.form-card {
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.form-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+
+.form-subtitle {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin: 0 0 2rem;
+}
+
+.vehicle-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Select styling to match dark theme */
+.select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.custom-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.custom-select {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  color: #fff;
+  padding: 0.625rem 0.875rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  height: 42px; /* aligns roughly with Taiga inputs */
+  box-sizing: border-box;
+}
+
+.custom-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.custom-select:disabled {
+  background-color: #111827;
+  border-color: #1f2937;
+  color: #4b5563;
+  cursor: not-allowed;
+}
+
+.error-banner {
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.cancel-btn {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.cancel-btn:hover {
+  color: #fff;
+}
+
+.submit-button {
+  min-width: 140px;
+}
+
+.loader-container {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+  color: #9ca3af;
+}
+
+.loader {
+  font-size: 0.9rem;
+}

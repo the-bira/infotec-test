@@ -34,6 +34,20 @@ export class Auth {
     return !!this.getToken();
   }
 
+  getNickname(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    const decoded = this.decodeToken(token);
+    return decoded ? decoded.nickname : null;
+  }
+
+  getTenantId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    const decoded = this.decodeToken(token);
+    return decoded ? decoded.tenantId : null;
+  }
+
   private decodeToken(token: string): any {
     try {
       const payload = token.split('.')[1];
