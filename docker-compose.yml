@@ -33,7 +33,7 @@ services:
       - DB_PORT=1433
       - DB_USERNAME=sa
       - DB_PASSWORD=S3nh4_Str0ng_2026!
-      - DB_DATABASE=aivacol_db
+      - DB_DATABASE=master
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=AivacolSecretToken2026
