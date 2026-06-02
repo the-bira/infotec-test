@@ -5,8 +5,8 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: aivacol_sqlserver
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=S3nh4_Str0ng_2026!
+      - ACCEPT_EULA=${ACCEPT_EULA}
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
     ports:
       - "1433:1433"
     volumes:
@@ -29,16 +29,16 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - PORT=3000
-      - DB_HOST=sqlserver
-      - DB_PORT=1433
-      - DB_USERNAME=sa
-      - DB_PASSWORD=S3nh4_Str0ng_2026!
-      - DB_DATABASE=master
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=AivacolSecretToken2026
-      - JWT_EXPIRES_IN=1d
+      - PORT=${PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
     depends_on:
       - sqlserver
       - redis

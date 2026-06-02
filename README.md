@@ -53,11 +53,15 @@ O ambiente completo do projeto (Banco SQL Server, Caching Redis e o próprio Ser
 * Ter o **Docker** e o **Docker Compose** instalados na máquina.
 
 ### Executando:
-1. Na raiz do repositório, execute o comando para baixar as imagens e construir o ambiente:
+1. Copie o arquivo `.env.example` para `.env` na raiz do projeto:
+   ```bash
+   cp .env.example .env
+   ```
+2. Na raiz do repositório, execute o comando para baixar as imagens e construir o ambiente:
    ```bash
    docker compose up --build -d
    ```
-2. Após o término da compilação e inicialização dos contêineres, o backend estará ativo e respondendo na porta **`3000`**.
+3. Após o término da compilação e inicialização dos contêineres, o backend estará ativo e respondendo na porta **`3000`**.
 
 ---
 
