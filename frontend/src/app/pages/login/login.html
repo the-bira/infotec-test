@@ -1,0 +1,40 @@
+<div class="login-container">
+  <div class="login-card">
+    <h2 class="login-title">Aivacol Fleet Management</h2>
+    <p class="login-subtitle">Entre para gerenciar sua frota de veículos</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      
+      <!-- Input do Nome de Usuário -->
+      <div class="form-field">
+        <tui-textfield>
+          <label tuiLabel>Nome de Usuário (Nickname)</label>
+          <input tuiInput formControlName="nickname" placeholder="Digite seu usuário" />
+        </tui-textfield>
+      </div>
+
+      <!-- Input da Senha -->
+      <div class="form-field">
+        <tui-textfield>
+          <label tuiLabel>Senha</label>
+          <input tuiInput formControlName="password" type="password" placeholder="Digite sua senha" />
+        </tui-textfield>
+      </div>
+
+      <!-- Alerta de Erro -->
+      <div *ngIf="errorMessage" class="error-banner">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Botão de Submissão -->
+      <button
+        tuiButton
+        type="submit"
+        [disabled]="loginForm.invalid || isLoading"
+        class="login-button"
+      >
+        {{ isLoading ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+  </div>
+</div>
