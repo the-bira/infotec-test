@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
 import { ModelsModule } from './models/models.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ModelsModule } from './models/models.module';
     AuthModule,
     BrandsModule,
     ModelsModule,
+    VehiclesModule,
 
     // 2. Establish Database Connection (SQL Server) via TypeORM
     TypeOrmModule.forRootAsync({

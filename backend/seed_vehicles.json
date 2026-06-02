@@ -1,0 +1,18 @@
+[
+  {
+    "license_plate": "ABC1234",
+    "chassis": "9BWAAAAAA12345678",
+    "renavam": "12345678901",
+    "year": 2022,
+    "brand_name": "Toyota",
+    "model_name": "Corolla"
+  },
+  {
+    "license_plate": "XYZ5678",
+    "chassis": "9BWAAAAAA87654321",
+    "renavam": "98765432109",
+    "year": 2023,
+    "brand_name": "Ford",
+    "model_name": "Ranger"
+  }
+]
