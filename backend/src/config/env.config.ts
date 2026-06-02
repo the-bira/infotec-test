@@ -11,4 +11,13 @@ export const envValidationSchema = Joi.object({
   REDIS_PORT: Joi.number().default(6379),
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().default('1d'),
+  MONGO_HOST: Joi.string().required(),
+  MONGO_PORT: Joi.number().default(27017),
+  MONGO_USERNAME: Joi.string().required(),
+  MONGO_PASSWORD: Joi.string().required(),
+  MONGO_DATABASE: Joi.string().required(),
+  RABBITMQ_HOST: Joi.string().required(),
+  RABBITMQ_PORT: Joi.number().default(5672),
+  RABBITMQ_USER: Joi.string().required(),
+  RABBITMQ_PASS: Joi.string().required(),
 });
