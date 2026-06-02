@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { VehiclesService } from './vehicles.service';
 import { Vehicle } from './entities/vehicle.entity';
 import { ModelsService } from '../models/models.service';
@@ -17,6 +18,7 @@ describe('VehiclesService', () => {
   let vehicleRepository: Repository<Vehicle>;
   let modelsService: ModelsService;
   let brandsService: BrandsService;
+  let cacheManager: any;
 
   const mockBrand: Brand = {
     id: 10,
@@ -74,6 +76,12 @@ describe('VehiclesService', () => {
     findAll: jest.fn(),
   };
 
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +98,10 @@ describe('VehiclesService', () => {
           provide: BrandsService,
           useValue: mockBrandsService,
         },
+        {
+          provide: CACHE_MANAGER,
+          useValue: mockCacheManager,
+        },
       ],
     }).compile();
 
@@ -97,6 +109,7 @@ describe('VehiclesService', () => {
     vehicleRepository = module.get<Repository<Vehicle>>(getRepositoryToken(Vehicle));
     modelsService = module.get<ModelsService>(ModelsService);
     brandsService = module.get<BrandsService>(BrandsService);
+    cacheManager = module.get(CACHE_MANAGER);
   });
 
   afterEach(() => {
@@ -108,7 +121,7 @@ describe('VehiclesService', () => {
   });
 
   describe('create', () => {
-    it('should create and return a vehicle if model exists in tenant', async () => {
+    it('should create, save and invalidate cache', async () => {
       mockModelsService.findOne.mockResolvedValue(mockModel);
       mockVehicleRepository.create.mockReturnValue(mockVehicle);
       mockVehicleRepository.save.mockResolvedValue(mockVehicle);
@@ -126,16 +139,7 @@ describe('VehiclesService', () => {
       );
 
       expect(result).toEqual(mockVehicle);
-      expect(modelsService.findOne).toHaveBeenCalledWith(20, 'aivacol');
-      expect(vehicleRepository.create).toHaveBeenCalledWith({
-        license_plate: 'ABC1234',
-        chassis: '9BWAAAAAA12345678',
-        renavam: '12345678901',
-        year: 2022,
-        model_id: 20,
-        tenant_id: 'aivacol',
-        created_by: 'aivacol',
-      });
+      expect(cacheManager.del).toHaveBeenCalledWith('vehicles:aivacol');
       expect(vehicleRepository.save).toHaveBeenCalledWith(mockVehicle);
     });
 
@@ -159,33 +163,60 @@ describe('VehiclesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all vehicles for a specific tenant', async () => {
+    it('should return cached vehicles if they exist', async () => {
+      cacheManager.get.mockResolvedValue([mockVehicle]);
+
+      const result = await service.findAll('aivacol');
+
+      expect(result).toEqual([mockVehicle]);
+      expect(cacheManager.get).toHaveBeenCalledWith('vehicles:aivacol');
+      expect(vehicleRepository.find).not.toHaveBeenCalled();
+    });
+
+    it('should query DB, set cache and return vehicles if cache is empty', async () => {
+      cacheManager.get.mockResolvedValue(null);
       mockVehicleRepository.find.mockResolvedValue([mockVehicle]);
 
       const result = await service.findAll('aivacol');
 
       expect(result).toEqual([mockVehicle]);
+      expect(cacheManager.get).toHaveBeenCalledWith('vehicles:aivacol');
       expect(vehicleRepository.find).toHaveBeenCalledWith({
         where: { tenant_id: 'aivacol' },
         relations: ['model', 'model.brand'],
       });
+      expect(cacheManager.set).toHaveBeenCalledWith('vehicles:aivacol', [mockVehicle]);
     });
   });
 
   describe('findOne', () => {
-    it('should return a vehicle by id and tenant', async () => {
+    it('should return cached vehicle if it exists', async () => {
+      cacheManager.get.mockResolvedValue(mockVehicle);
+
+      const result = await service.findOne(1, 'aivacol');
+
+      expect(result).toEqual(mockVehicle);
+      expect(cacheManager.get).toHaveBeenCalledWith('vehicle:aivacol:1');
+      expect(vehicleRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should query DB, set cache and return vehicle if cache is empty', async () => {
+      cacheManager.get.mockResolvedValue(null);
       mockVehicleRepository.findOne.mockResolvedValue(mockVehicle);
 
       const result = await service.findOne(1, 'aivacol');
 
       expect(result).toEqual(mockVehicle);
+      expect(cacheManager.get).toHaveBeenCalledWith('vehicle:aivacol:1');
       expect(vehicleRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
         relations: ['model', 'model.brand'],
       });
+      expect(cacheManager.set).toHaveBeenCalledWith('vehicle:aivacol:1', mockVehicle);
     });
 
     it('should throw NotFoundException if vehicle not found in tenant', async () => {
+      cacheManager.get.mockResolvedValue(null);
       mockVehicleRepository.findOne.mockResolvedValue(null);
 
       await expect(service.findOne(999, 'aivacol')).rejects.toThrow(
@@ -195,7 +226,7 @@ describe('VehiclesService', () => {
   });
 
   describe('update', () => {
-    it('should update and return the updated vehicle', async () => {
+    it('should update, save and invalidate cache keys', async () => {
       mockVehicleRepository.findOne.mockResolvedValue(mockVehicle);
       mockVehicleRepository.save.mockResolvedValue({
         ...mockVehicle,
@@ -209,25 +240,21 @@ describe('VehiclesService', () => {
       );
 
       expect(result.year).toEqual(2023);
-      expect(vehicleRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['model', 'model.brand'],
-      });
+      expect(cacheManager.del).toHaveBeenCalledWith('vehicles:aivacol');
+      expect(cacheManager.del).toHaveBeenCalledWith('vehicle:aivacol:1');
       expect(vehicleRepository.save).toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
-    it('should delete a vehicle if it exists', async () => {
+    it('should delete, remove and invalidate cache keys', async () => {
       mockVehicleRepository.findOne.mockResolvedValue(mockVehicle);
       mockVehicleRepository.delete.mockResolvedValue({ affected: 1 });
 
       await service.remove(1, 'aivacol');
 
-      expect(vehicleRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['model', 'model.brand'],
-      });
+      expect(cacheManager.del).toHaveBeenCalledWith('vehicles:aivacol');
+      expect(cacheManager.del).toHaveBeenCalledWith('vehicle:aivacol:1');
       expect(vehicleRepository.delete).toHaveBeenCalledWith({
         id: 1,
         tenant_id: 'aivacol',

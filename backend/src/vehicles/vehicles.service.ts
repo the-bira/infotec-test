@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Vehicle } from './entities/vehicle.entity';
@@ -16,6 +18,8 @@ export class VehiclesService implements OnModuleInit {
     private readonly vehicleRepository: Repository<Vehicle>,
     private readonly modelsService: ModelsService,
     private readonly brandsService: BrandsService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   async onModuleInit() {
@@ -36,17 +40,37 @@ export class VehiclesService implements OnModuleInit {
       tenant_id: tenantId,
       created_by: username,
     });
-    return this.vehicleRepository.save(vehicle);
+    const saved = await this.vehicleRepository.save(vehicle);
+
+    // 3. Invalidate vehicles list cache
+    await this.cacheManager.del(`vehicles:${tenantId}`);
+
+    return saved;
   }
 
   async findAll(tenantId: string): Promise<Vehicle[]> {
-    return this.vehicleRepository.find({
+    const cacheKey = `vehicles:${tenantId}`;
+    const cached = await this.cacheManager.get<Vehicle[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const vehicles = await this.vehicleRepository.find({
       where: { tenant_id: tenantId },
       relations: ['model', 'model.brand'],
     });
+
+    await this.cacheManager.set(cacheKey, vehicles);
+    return vehicles;
   }
 
   async findOne(id: number, tenantId: string): Promise<Vehicle> {
+    const cacheKey = `vehicle:${tenantId}:${id}`;
+    const cached = await this.cacheManager.get<Vehicle>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const vehicle = await this.vehicleRepository.findOne({
       where: { id, tenant_id: tenantId },
       relations: ['model', 'model.brand'],
@@ -54,6 +78,8 @@ export class VehiclesService implements OnModuleInit {
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);
     }
+
+    await this.cacheManager.set(cacheKey, vehicle);
     return vehicle;
   }
 
@@ -64,12 +90,22 @@ export class VehiclesService implements OnModuleInit {
   ): Promise<Vehicle> {
     const vehicle = await this.findOne(id, tenantId);
     Object.assign(vehicle, updateVehicleDto);
-    return this.vehicleRepository.save(vehicle);
+    const updated = await this.vehicleRepository.save(vehicle);
+
+    // Invalidate caches
+    await this.cacheManager.del(`vehicles:${tenantId}`);
+    await this.cacheManager.del(`vehicle:${tenantId}:${id}`);
+
+    return updated;
   }
 
   async remove(id: number, tenantId: string): Promise<void> {
     const vehicle = await this.findOne(id, tenantId);
     await this.vehicleRepository.delete({ id: vehicle.id, tenant_id: tenantId });
+
+    // Invalidate caches
+    await this.cacheManager.del(`vehicles:${tenantId}`);
+    await this.cacheManager.del(`vehicle:${tenantId}:${id}`);
   }
 
   async seedInitialVehicles(): Promise<void> {
