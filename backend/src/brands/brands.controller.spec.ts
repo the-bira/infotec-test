@@ -99,16 +99,19 @@ describe('BrandsController', () => {
         name: 'Toyota Updated',
       });
 
+      const req = { user: { nickname: 'aivacol' } };
       const result = await controller.update(
         1,
         { name: 'Toyota Updated' },
         'aivacol',
+        req,
       );
 
       expect(result.name).toEqual('Toyota Updated');
       expect(service.update).toHaveBeenCalledWith(
         1,
         { name: 'Toyota Updated' },
+        'aivacol',
         'aivacol',
       );
     });
@@ -118,9 +121,10 @@ describe('BrandsController', () => {
     it('should remove a brand', async () => {
       mockBrandsService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(1, 'aivacol');
+      const req = { user: { nickname: 'aivacol' } };
+      await controller.remove(1, 'aivacol', req);
 
-      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol');
+      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol', 'aivacol');
     });
   });
 });

@@ -115,16 +115,19 @@ describe('VehiclesController', () => {
         year: 2023,
       });
 
+      const req = { user: { nickname: 'aivacol' } };
       const result = await controller.update(
         1,
         { year: 2023 },
         'aivacol',
+        req,
       );
 
       expect(result.year).toEqual(2023);
       expect(service.update).toHaveBeenCalledWith(
         1,
         { year: 2023 },
+        'aivacol',
         'aivacol',
       );
     });
@@ -134,9 +137,10 @@ describe('VehiclesController', () => {
     it('should remove a vehicle', async () => {
       mockVehiclesService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(1, 'aivacol');
+      const req = { user: { nickname: 'aivacol' } };
+      await controller.remove(1, 'aivacol', req);
 
-      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol');
+      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol', 'aivacol');
     });
   });
 });

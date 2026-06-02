@@ -100,16 +100,19 @@ describe('ModelsController', () => {
         name: 'Corolla Updated',
       });
 
+      const req = { user: { nickname: 'aivacol' } };
       const result = await controller.update(
         1,
         { name: 'Corolla Updated' },
         'aivacol',
+        req,
       );
 
       expect(result.name).toEqual('Corolla Updated');
       expect(service.update).toHaveBeenCalledWith(
         1,
         { name: 'Corolla Updated' },
+        'aivacol',
         'aivacol',
       );
     });
@@ -119,9 +122,10 @@ describe('ModelsController', () => {
     it('should remove a model', async () => {
       mockModelsService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(1, 'aivacol');
+      const req = { user: { nickname: 'aivacol' } };
+      await controller.remove(1, 'aivacol', req);
 
-      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol');
+      expect(service.remove).toHaveBeenCalledWith(1, 'aivacol', 'aivacol');
     });
   });
 });

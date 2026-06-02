@@ -27,6 +27,10 @@ describe('BrandsService', () => {
     delete: jest.fn(),
   };
 
+  const mockAuditClient = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -34,6 +38,10 @@ describe('BrandsService', () => {
         {
           provide: getRepositoryToken(Brand),
           useValue: mockBrandRepository,
+        },
+        {
+          provide: 'AUDIT_SERVICE',
+          useValue: mockAuditClient,
         },
       ],
     }).compile();
@@ -110,6 +118,7 @@ describe('BrandsService', () => {
         1,
         { name: 'Toyota Updated' },
         'aivacol',
+        'aivacol',
       );
 
       expect(result.name).toEqual('Toyota Updated');
@@ -125,7 +134,7 @@ describe('BrandsService', () => {
       mockBrandRepository.findOne.mockResolvedValue(mockBrand);
       mockBrandRepository.delete.mockResolvedValue({ affected: 1 });
 
-      await service.remove(1, 'aivacol');
+      await service.remove(1, 'aivacol', 'aivacol');
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
