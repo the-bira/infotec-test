@@ -8,6 +8,7 @@ describe('JwtStrategy', () => {
 
   const mockConfigService = {
     get: jest.fn().mockReturnValue('AivacolSecretToken2026'),
+    getOrThrow: jest.fn().mockReturnValue('AivacolSecretToken2026'),
   };
 
   beforeEach(async () => {

@@ -52,7 +52,13 @@ describe('VehicleForm', () => {
       getModels: vi.fn().mockReturnValue(of(mockModels)),
       getVehicle: vi.fn().mockReturnValue(of(mockVehicle)),
       createVehicle: vi.fn().mockReturnValue(of(mockVehicle)),
-      updateVehicle: vi.fn().mockReturnValue(of(mockVehicle))
+      updateVehicle: vi.fn().mockReturnValue(of(mockVehicle)),
+      createBrand: vi.fn().mockReturnValue(of(mockBrands[0])),
+      updateBrand: vi.fn().mockReturnValue(of(mockBrands[0])),
+      deleteBrand: vi.fn().mockReturnValue(of(undefined)),
+      createModel: vi.fn().mockReturnValue(of(mockModels[0])),
+      updateModel: vi.fn().mockReturnValue(of(mockModels[0])),
+      deleteModel: vi.fn().mockReturnValue(of(undefined))
     };
 
     mockRouter = {
@@ -173,5 +179,62 @@ describe('VehicleForm', () => {
       model_id: 10
     });
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/vehicles']);
+  });
+
+  describe('Brands & Models Modal Manager', () => {
+    it('should open and close manager modal', () => {
+      fixture.detectChanges();
+      expect(component.showManagerModal).toBe(false);
+      component.openManagerModal();
+      expect(component.showManagerModal).toBe(true);
+      component.closeManagerModal();
+      expect(component.showManagerModal).toBe(false);
+    });
+
+    it('should call createBrand when saving a new brand', () => {
+      fixture.detectChanges();
+      component.brandInputName = 'New Brand';
+      component.saveBrand();
+      expect(mockFleetService.createBrand).toHaveBeenCalledWith({ name: 'New Brand' });
+    });
+
+    it('should call updateBrand when saving an edited brand', () => {
+      fixture.detectChanges();
+      component.editingBrandId = 1;
+      component.brandInputName = 'Edited Brand';
+      component.saveBrand();
+      expect(mockFleetService.updateBrand).toHaveBeenCalledWith(1, { name: 'Edited Brand' });
+    });
+
+    it('should call deleteBrand when deleting a brand', () => {
+      fixture.detectChanges();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      component.deleteBrand(1);
+      expect(mockFleetService.deleteBrand).toHaveBeenCalledWith(1);
+    });
+
+    it('should call createModel when saving a new model', () => {
+      fixture.detectChanges();
+      component.modelInputName = 'New Model';
+      component.modelInputBrandId = 1;
+      component.saveModel();
+      expect(mockFleetService.createModel).toHaveBeenCalledWith({ name: 'New Model', brand_id: 1 });
+    });
+
+    it('should call updateModel when saving an edited model', () => {
+      fixture.detectChanges();
+      component.editingModelId = 10;
+      component.modelInputName = 'Edited Model';
+      component.modelInputBrandId = 1;
+      component.saveModel();
+      expect(mockFleetService.updateModel).toHaveBeenCalledWith(10, { name: 'Edited Model', brand_id: 1 });
+    });
+
+    it('should call deleteModel when deleting a model', () => {
+      fixture.detectChanges();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      component.deleteModel(10);
+      expect(mockFleetService.deleteModel).toHaveBeenCalledWith(10);
+    });
   });
 });

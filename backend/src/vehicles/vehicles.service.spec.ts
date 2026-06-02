@@ -183,7 +183,7 @@ describe('VehiclesService', () => {
       expect(cacheManager.get).toHaveBeenCalledWith('vehicles:aivacol');
       expect(vehicleRepository.find).toHaveBeenCalledWith({
         where: { tenant_id: 'aivacol' },
-        relations: ['model', 'model.brand'],
+        relations: { model: { brand: true } },
       });
       expect(cacheManager.set).toHaveBeenCalledWith('vehicles:aivacol', [mockVehicle]);
     });
@@ -210,7 +210,7 @@ describe('VehiclesService', () => {
       expect(cacheManager.get).toHaveBeenCalledWith('vehicle:aivacol:1');
       expect(vehicleRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['model', 'model.brand'],
+        relations: { model: { brand: true } },
       });
       expect(cacheManager.set).toHaveBeenCalledWith('vehicle:aivacol:1', mockVehicle);
     });

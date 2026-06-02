@@ -114,7 +114,7 @@ describe('ModelsService', () => {
       expect(result).toEqual([mockModel]);
       expect(modelRepository.find).toHaveBeenCalledWith({
         where: { tenant_id: 'aivacol' },
-        relations: ['brand'],
+        relations: { brand: true },
       });
     });
   });
@@ -128,7 +128,7 @@ describe('ModelsService', () => {
       expect(result).toEqual(mockModel);
       expect(modelRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['brand'],
+        relations: { brand: true },
       });
     });
 
@@ -158,7 +158,7 @@ describe('ModelsService', () => {
       expect(result.name).toEqual('Corolla Hybrid');
       expect(modelRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['brand'],
+        relations: { brand: true },
       });
       expect(modelRepository.save).toHaveBeenCalled();
     });
@@ -173,7 +173,7 @@ describe('ModelsService', () => {
 
       expect(modelRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, tenant_id: 'aivacol' },
-        relations: ['brand'],
+        relations: { brand: true },
       });
       expect(modelRepository.delete).toHaveBeenCalledWith({
         id: 1,

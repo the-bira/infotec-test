@@ -60,7 +60,10 @@
         <div class="form-grid">
           <!-- Campo Marca (Select Customizado) -->
           <div class="form-field select-field">
-            <label class="custom-label">Marca</label>
+            <div class="custom-label-row">
+              <label class="custom-label">Marca</label>
+              <button type="button" class="manage-btn" (click)="openManagerModal()">Gerenciar</button>
+            </div>
             <select formControlName="brand_id" (change)="onBrandChange($event)" class="custom-select">
               <option value="" disabled selected>Selecione uma marca</option>
               <option *ngFor="let brand of brands" [value]="brand.id">{{ brand.name }}</option>
@@ -97,4 +100,203 @@
       </form>
     </div>
   </main>
+
+  <!-- Modal de Gerenciamento de Marcas e Modelos -->
+  <div *ngIf="showManagerModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Gerenciar Marcas e Modelos</h2>
+        <button type="button" class="close-modal-btn" (click)="closeManagerModal()">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="modal-tabs">
+        <button
+          type="button"
+          class="modal-tab-btn"
+          [class.active]="activeManagerTab === 'brands'"
+          (click)="setTab('brands')"
+        >
+          Marcas
+        </button>
+        <button
+          type="button"
+          class="modal-tab-btn"
+          [class.active]="activeManagerTab === 'models'"
+          (click)="setTab('models')"
+        >
+          Modelos
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="modal-body">
+        
+        <!-- Alerta de Erro Interno do Modal -->
+        <div *ngIf="modalErrorMessage" class="error-banner mb-3">
+          {{ modalErrorMessage }}
+        </div>
+
+        <!-- 1. Aba de Marcas -->
+        <div *ngIf="activeManagerTab === 'brands'" class="tab-content">
+          <!-- Formulário de Adicionar/Editar Marca -->
+          <div class="modal-form-row">
+            <input
+              type="text"
+              class="modal-input"
+              [(ngModel)]="brandInputName"
+              placeholder="Nome da Marca (Ex: Honda)"
+              maxlength="50"
+            />
+            <button
+              type="button"
+              class="modal-action-btn"
+              [disabled]="isModalSaving"
+              (click)="saveBrand()"
+            >
+              {{ editingBrandId ? 'Salvar' : 'Adicionar' }}
+            </button>
+            <button
+              type="button"
+              class="modal-cancel-btn"
+              *ngIf="editingBrandId"
+              (click)="resetBrandForm()"
+            >
+              Cancelar
+            </button>
+          </div>
+
+          <!-- Tabela de Marcas -->
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th style="width: 100px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="brands.length === 0">
+                <td colspan="2" class="empty-row">Nenhuma marca cadastrada.</td>
+              </tr>
+              <tr *ngFor="let brand of paginatedBrands">
+                <td>{{ brand.name }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="table-edit-btn" (click)="editBrand(brand)" title="Editar">✏️</button>
+                  <button type="button" class="table-delete-btn" (click)="deleteBrand(brand.id)" title="Excluir">❌</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Paginação de Marcas -->
+          <div *ngIf="totalBrandPages > 1" class="modal-pagination">
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="brandPage === 1"
+              (click)="brandPage = brandPage - 1"
+            >
+              &larr; Anterior
+            </button>
+            <span class="paging-info">Pág. {{ brandPage }} de {{ totalBrandPages }}</span>
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="brandPage === totalBrandPages"
+              (click)="brandPage = brandPage + 1"
+            >
+              Próximo &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Aba de Modelos -->
+        <div *ngIf="activeManagerTab === 'models'" class="tab-content">
+          <!-- Formulário de Adicionar/Editar Modelo -->
+          <div class="modal-form-row col-layout">
+            <div class="row-inputs">
+              <select
+                class="modal-select"
+                [(ngModel)]="modelInputBrandId"
+              >
+                <option value="" disabled selected>Selecione a marca</option>
+                <option *ngFor="let brand of brands" [value]="brand.id">{{ brand.name }}</option>
+              </select>
+              <input
+                type="text"
+                class="modal-input"
+                [(ngModel)]="modelInputName"
+                placeholder="Nome do Modelo (Ex: Civic)"
+                maxlength="50"
+              />
+            </div>
+            <div class="row-buttons">
+              <button
+                type="button"
+                class="modal-action-btn"
+                [disabled]="isModalSaving"
+                (click)="saveModel()"
+              >
+                {{ editingModelId ? 'Salvar' : 'Adicionar' }}
+              </button>
+              <button
+                type="button"
+                class="modal-cancel-btn"
+                *ngIf="editingModelId"
+                (click)="resetModelForm()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Modelos -->
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Marca</th>
+                <th style="width: 100px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="allModels.length === 0">
+                <td colspan="3" class="empty-row">Nenhum modelo cadastrado.</td>
+              </tr>
+              <tr *ngFor="let model of paginatedModels">
+                <td>{{ model.name }}</td>
+                <td>{{ model.brand?.name || 'Sem Marca' }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="table-edit-btn" (click)="editModel(model)" title="Editar">✏️</button>
+                  <button type="button" class="table-delete-btn" (click)="deleteModel(model.id)" title="Excluir">❌</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Paginação de Modelos -->
+          <div *ngIf="totalModelPages > 1" class="modal-pagination">
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="modelPage === 1"
+              (click)="modelPage = modelPage - 1"
+            >
+              &larr; Anterior
+            </button>
+            <span class="paging-info">Pág. {{ modelPage }} de {{ totalModelPages }}</span>
+            <button
+              type="button"
+              class="paging-btn"
+              [disabled]="modelPage === totalModelPages"
+              (click)="modelPage = modelPage + 1"
+            >
+              Próximo &rarr;
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </div>

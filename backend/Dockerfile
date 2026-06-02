@@ -30,8 +30,9 @@ COPY package.json pnpm-lock.yaml ./
 # Install only production dependencies
 RUN pnpm install --prod --frozen-lockfile
 
-# Copy build artifacts from builder stage
+# Copy build artifacts and seed file from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/seed_vehicles.json ./seed_vehicles.json
 
 # Expose port
 EXPOSE 3000
